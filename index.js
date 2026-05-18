@@ -29,6 +29,11 @@ async function run() {
     const db = client.db("mediqueue");
     const tutorsCollection = db.collection("tutors");
 
+    app.get("/tutors", async (req, res) => {
+      const result = await tutorsCollection.find().toArray();
+      res.json(result);
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
