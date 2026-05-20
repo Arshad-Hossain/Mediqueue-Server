@@ -5,7 +5,7 @@ const express = require("express");
 require("dotenv").config();
 const cors = require("cors");
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 const app = express();
 const port = process.env.PORT;
@@ -52,6 +52,14 @@ async function run() {
         { $set: updatedData },
       );
 
+      res.json(result);
+    });
+
+    app.delete("/mytutors/:id", async (req, res) => {
+      const { id } = req.params;
+      const result = await mytutorsCollection.deleteOne({
+        _id: new ObjectId(id),
+      });
       res.json(result);
     });
 
