@@ -1,5 +1,5 @@
-const dns = require("node:dns");
-dns.setServers(["8.8.8.8", "8.8.4.4"]);
+// const dns = require("node:dns");
+// dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 const express = require("express");
 require("dotenv").config();
@@ -61,6 +61,11 @@ async function run() {
       const result = await mytutorsCollection.deleteOne({
         _id: new ObjectId(id),
       });
+      res.json(result);
+    });
+
+    app.get("/bookedSession", async (req, res) => {
+      const result = await mybookedsessionCollection.find().toArray();
       res.json(result);
     });
 
