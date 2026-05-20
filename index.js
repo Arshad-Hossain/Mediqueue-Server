@@ -28,9 +28,22 @@ async function run() {
 
     const db = client.db("mediqueue");
     const tutorsCollection = db.collection("tutors");
+    const mytutorsCollection = db.collection("mytutors");
+
+    app.post("/mytutors", async (req, res) => {
+      const mytutorData = req.body;
+      console.log(mytutorData);
+      const result = await mytutorsCollection.insertOne(mytutorData);
+
+      res.json(result);
+    });
 
     app.get("/tutors", async (req, res) => {
       const result = await tutorsCollection.find().toArray();
+      res.json(result);
+    });
+    app.get("/tutors-six", async (req, res) => {
+      const result = await tutorsCollection.find().limit(6).toArray();
       res.json(result);
     });
 
