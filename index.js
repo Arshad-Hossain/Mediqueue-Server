@@ -42,6 +42,18 @@ async function run() {
 
       res.json(result);
     });
+    app.patch("/mytutors/:id", async (req, res) => {
+      const { id } = req.params;
+      const updatedData = req.body;
+      console.log(updatedData);
+
+      const result = await mytutorsCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updatedData },
+      );
+
+      res.json(result);
+    });
 
     app.get("/tutors", async (req, res) => {
       const result = await tutorsCollection.find().toArray();
