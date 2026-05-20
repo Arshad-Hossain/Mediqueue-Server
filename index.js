@@ -29,6 +29,7 @@ async function run() {
     const db = client.db("mediqueue");
     const tutorsCollection = db.collection("tutors");
     const mytutorsCollection = db.collection("mytutors");
+    const mybookedsessionCollection = db.collection("mybookedsession");
 
     app.get("/mytutors", async (req, res) => {
       const result = await mytutorsCollection.find().toArray();
@@ -60,6 +61,14 @@ async function run() {
       const result = await mytutorsCollection.deleteOne({
         _id: new ObjectId(id),
       });
+      res.json(result);
+    });
+
+    app.post("/bookedSession", async (req, res) => {
+      const bookedSessionData = req.body;
+      const result =
+        await mybookedsessionCollection.insertOne(bookedSessionData);
+
       res.json(result);
     });
 
