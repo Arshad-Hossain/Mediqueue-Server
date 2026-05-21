@@ -48,14 +48,14 @@ const verifyToken = async (req, res, next) => {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const db = client.db("mediqueue");
     const tutorsCollection = db.collection("tutors");
     const mytutorsCollection = db.collection("mytutors");
     const mybookedsessionCollection = db.collection("mybookedsession");
 
-    app.get("/mytutors", async (req, res) => {
+    app.get("/mytutors", verifyToken, async (req, res) => {
       const result = await mytutorsCollection.find().toArray();
       res.json(result);
     });
@@ -67,7 +67,7 @@ async function run() {
 
       res.json(result);
     });
-    app.patch("/mytutors/:id", async (req, res) => {
+    app.patch("/mytutors/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
       const updatedData = req.body;
       console.log(updatedData);
@@ -80,7 +80,7 @@ async function run() {
       res.json(result);
     });
 
-    app.delete("/mytutors/:id", async (req, res) => {
+    app.delete("/mytutors/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
       const result = await mytutorsCollection.deleteOne({
         _id: new ObjectId(id),
@@ -88,7 +88,7 @@ async function run() {
       res.json(result);
     });
 
-    app.get("/bookedSession", async (req, res) => {
+    app.get("/bookedSession", verifyToken, async (req, res) => {
       const result = await mybookedsessionCollection.find().toArray();
       res.json(result);
     });
@@ -101,7 +101,7 @@ async function run() {
       res.json(result);
     });
 
-    app.patch("/bookedSession/:id", async (req, res) => {
+    app.patch("/bookedSession/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
       const updatedData = req.body;
       console.log(updatedData);
@@ -114,10 +114,37 @@ async function run() {
       res.json(result);
     });
 
+    // app.get("/tutors", async (req, res) => {
+    //   const result = await tutorsCollection.find().toArray();
+    //   res.json(result);
+    // });
     app.get("/tutors", async (req, res) => {
-      const result = await tutorsCollection.find().toArray();
+      const { search, startDate, endDate } = req.query;
+
+      let query = {};
+
+      // 🔍 Name search (keep your existing logic)
+      if (search) {
+        query.name = { $regex: search, $options: "i" };
+      }
+
+      // 📅 Date range filter
+      if (startDate || endDate) {
+        query.sessionStartDate = {};
+
+        if (startDate) {
+          query.sessionStartDate.$gte = new Date(startDate);
+        }
+
+        if (endDate) {
+          query.sessionStartDate.$lte = new Date(endDate);
+        }
+      }
+
+      const result = await tutorsCollection.find(query).toArray();
       res.json(result);
     });
+
     app.get("/tutors-six", async (req, res) => {
       const result = await tutorsCollection.find().limit(6).toArray();
       res.json(result);
@@ -140,7 +167,7 @@ async function run() {
     });
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
     );
