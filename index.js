@@ -93,12 +93,56 @@ async function run() {
       res.json(result);
     });
 
+    // app.post("/bookedSession", verifyToken, async (req, res) => {
+    //   const bookedSessionData = req.body;
+    //   const result =
+    //     await mybookedsessionCollection.insertOne(bookedSessionData);
+
+    //   res.json(result);
+    // });
+
     app.post("/bookedSession", verifyToken, async (req, res) => {
       const bookedSessionData = req.body;
-      const result =
+
+      const { tutorId } = bookedSessionData;
+
+      // Find selected tutor only
+      const tutor = await tutorsCollection.findOne({
+        _id: new ObjectId(tutorId),
+      });
+
+      // No slots left
+      if (!tutor || tutor.remainingSlots <= 0) {
+        return res.status(400).json({
+          message: "No slots left",
+        });
+      }
+
+      // Save booking
+      const bookingResult =
         await mybookedsessionCollection.insertOne(bookedSessionData);
 
-      res.json(result);
+      // Deduct only selected tutor slot
+      await tutorsCollection.updateOne(
+        {
+          _id: new ObjectId(tutorId),
+        },
+        {
+          $inc: {
+            remainingSlots: -1,
+          },
+        },
+      );
+
+      // Updated tutor
+      const updatedTutor = await tutorsCollection.findOne({
+        _id: new ObjectId(tutorId),
+      });
+
+      res.json({
+        insertedId: bookingResult.insertedId,
+        updatedTutor,
+      });
     });
 
     app.patch("/bookedSession/:id", verifyToken, async (req, res) => {
