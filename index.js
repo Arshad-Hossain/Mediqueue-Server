@@ -6,6 +6,7 @@ require("dotenv").config();
 const cors = require("cors");
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const { createRemoteJWKSet, jwtVerify } = require("jose-cjs");
 
 const app = express();
 const port = process.env.PORT;
@@ -21,6 +22,29 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+
+const JWKS = createRemoteJWKSet(
+  new URL(`${process.env.CLIENT_URL}/api/auth/jwks`),
+);
+
+const verifyToken = async (req, res, next) => {
+  const authHeader = req?.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  const token = authHeader.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  try {
+    const { payload } = await jwtVerify(token, JWKS);
+    console.log(payload);
+    next();
+  } catch (error) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+};
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -36,7 +60,7 @@ async function run() {
       res.json(result);
     });
 
-    app.post("/mytutors", async (req, res) => {
+    app.post("/mytutors", verifyToken, async (req, res) => {
       const mytutorData = req.body;
       console.log(mytutorData);
       const result = await mytutorsCollection.insertOne(mytutorData);
@@ -69,10 +93,23 @@ async function run() {
       res.json(result);
     });
 
-    app.post("/bookedSession", async (req, res) => {
+    app.post("/bookedSession", verifyToken, async (req, res) => {
       const bookedSessionData = req.body;
       const result =
         await mybookedsessionCollection.insertOne(bookedSessionData);
+
+      res.json(result);
+    });
+
+    app.patch("/bookedSession/:id", async (req, res) => {
+      const { id } = req.params;
+      const updatedData = req.body;
+      console.log(updatedData);
+
+      const result = await mybookedsessionCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updatedData },
+      );
 
       res.json(result);
     });
@@ -84,6 +121,22 @@ async function run() {
     app.get("/tutors-six", async (req, res) => {
       const result = await tutorsCollection.find().limit(6).toArray();
       res.json(result);
+    });
+    // app.get("/tutors/:id", async (req, res) => {
+    //   const result = await tutorsCollection.find().toArray();
+    //   res.json(result);
+    // });
+
+    //middleware
+
+    app.get("/tutors/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+
+      const query = { _id: new ObjectId(id) };
+
+      const tutor = await tutorsCollection.findOne(query);
+
+      res.json(tutor);
     });
 
     // Send a ping to confirm a successful connection
